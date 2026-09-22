@@ -99,11 +99,34 @@ if [ "$AVAIL_MB" -lt "$NEED_MB" ] && [ -f /swapfile ]; then
   done
 fi
 
+# Still short, and Docker is here? The most likely reason is a previous run of
+# this very script: a build leaves its cache and the layers of the image it
+# replaced behind, and on an 8 GiB root volume that is enough to make the NEXT
+# update impossible. Reclaim it rather than sending someone to resize a volume
+# over rubbish we left there.
+#
+# Deliberately NOT `docker system prune --volumes`. The database lives in a
+# Docker volume, and that one flag is the difference between freeing disk and
+# destroying every payment on the machine. Build cache and dangling layers only.
+if [ "$AVAIL_MB" -lt "$NEED_MB" ] && command -v docker >/dev/null 2>&1; then
+  note "reclaiming Docker build cache and untagged layers"
+  docker builder prune -af >/dev/null 2>&1 || true
+  docker image prune -f    >/dev/null 2>&1 || true
+  AVAIL_MB=$(df -Pm / | awk 'NR==2{print $4}')
+  good "${AVAIL_MB} MB free now"
+fi
+
 if [ "$AVAIL_MB" -lt "$NEED_MB" ]; then
   die "Not enough disk to build: ${AVAIL_MB} MB free, ${NEED_MB} MB needed.
-  Enlarge the volume (EC2 -> Instances -> your instance -> Storage tab -> click
-  the Volume ID -> Actions -> Modify volume -> 20 GiB), then run this again —
-  it will grow the filesystem for you."
+  I already reclaimed what Docker could spare, so this needs a bigger volume:
+  EC2 -> Instances -> your instance -> Storage tab -> click the Volume ID
+  -> Actions -> Modify volume -> 20 GiB. Then run this again; it grows the
+  filesystem for you.
+
+  If you would rather free space by hand first, this goes further and is still
+  safe — it removes images no running container needs:
+      sudo docker system prune -af
+  Never add --volumes to that. Your database is in a Docker volume."
 fi
 [ "$AVAIL_MB" -lt 6000 ] && note "that is tight but workable; enlarge the volume to 20 GiB before real data lands here"
 
