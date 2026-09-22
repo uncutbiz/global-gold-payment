@@ -1,0 +1,138 @@
+================================================================================
+  GETTING GLOBAL GOLD PAYMENT ONTO YOUR SERVER — THE LAST TIME
+================================================================================
+
+Everything that went wrong so far went wrong for one reason: the server could
+not get hold of the source code.
+
+  - S3 with an IAM role   -> "Unable to locate credentials"
+  - S3 with a signed link -> the link expires in an hour, and pasting a
+                             500-character link into PuTTY is a coin toss
+  - copy and paste        -> the clipboard pasted the wrong thing
+
+So we stop trying to make those work. GitHub gives a permanent web address that
+needs no login, no expiry, and no credentials. Then the server install is one
+line that you can retype by hand if you have to.
+
+This folder has the two files to put there.
+
+--------------------------------------------------------------------------------
+STEP 1 — MAKE THE REPOSITORY  (about 2 minutes, in your browser)
+--------------------------------------------------------------------------------
+
+  1. Go to   https://github.com/new
+
+  2. Repository name:   global-gold-payment
+
+     Type it EXACTLY like that, all lowercase, with the two hyphens.
+     The server install line has this name in it.
+
+  3. Choose  Public.
+
+     It has to be Public for a server with no login to read a file from it.
+     I checked the code first: there are no keys, no passwords and no
+     customer data in what you are uploading. Every "sk_live_" and
+     "sq0csp-" in there is either a comment explaining what to put in a
+     setting, or a fake value in a test.
+
+     If you would rather not leave it public: leave it public for the
+     twenty minutes the install takes, then go to
+     Settings -> General -> scroll to the bottom -> Change visibility
+     -> Make private. The server already has its own copy by then.
+
+  4. Leave everything else alone. Click  Create repository.
+
+--------------------------------------------------------------------------------
+STEP 2 — UPLOAD THE TWO FILES  (about 1 minute)
+--------------------------------------------------------------------------------
+
+  1. On the new empty repository page, click the link
+     "uploading an existing file".
+
+     (If you do not see it:  Add file -> Upload files)
+
+  2. Drag these two files from THIS folder into the browser window:
+
+           go.sh
+           globalgold-source.tar.gz
+
+     Just those two files. Do not drag the folder itself, and do not drag
+     your Documents\GlobalGoldPayment folder — that one contains your .env
+     file, which holds your vault key and your admin token.
+
+  3. Click  Commit changes.
+
+  4. Check it worked. Open this address in your browser:
+
+     https://raw.githubusercontent.com/uncutbiz/global-gold-payment/main/go.sh
+
+     You should see the text of a shell script starting with #!/usr/bin/env
+     bash. If you get a 404 page, the repository name or the file name is
+     wrong — fix that before going to step 3.
+
+--------------------------------------------------------------------------------
+STEP 3 — INSTALL IT ON THE SERVER  (one line)
+--------------------------------------------------------------------------------
+
+Open PuTTY and log in to the instance. Then type this — one line, and it is
+short enough to type by hand if the paste misbehaves:
+
+  curl -fsSL -o /tmp/go.sh https://raw.githubusercontent.com/uncutbiz/global-gold-payment/main/go.sh && sudo bash /tmp/go.sh
+
+That is the whole install. No link to paste, no credentials, nothing to
+substitute.
+
+To paste it into PuTTY: copy the line above, then RIGHT-CLICK in the PuTTY
+window. PuTTY ignores Ctrl+V. It pastes whatever was copied last, so copy the
+line immediately before you right-click.
+
+It then runs on its own for ten to fifteen minutes and tells you what it is
+doing as it goes:
+
+     == Disk        grows the filesystem if the volume was enlarged, and
+                    reclaims the swapfile if it is in the way
+     == Memory      adds swap, sized to what the disk can spare
+     == Source      downloads the code from the address above
+     == Installing  installs Docker, builds the app, starts everything
+
+When it finishes it prints the address the platform is answering on and the
+next two commands.
+
+--------------------------------------------------------------------------------
+STEP 4 — YOUR LOGIN
+--------------------------------------------------------------------------------
+
+  sudo ggp create-admin you@example.com "Your Name"
+
+It prints a password once. Write it down; it is not stored anywhere you can
+read it back.
+
+Then open the address the install printed, in your browser.
+
+Until you point a domain at this machine it is plain HTTP on port 8080 with no
+certificate, so keep port 8080 restricted to your own IP in the security group.
+Once you have a domain:
+
+  sudo ggp set-domain pay.yourdomain.com
+
+--------------------------------------------------------------------------------
+IF SOMETHING STILL GOES WRONG
+--------------------------------------------------------------------------------
+
+Send me what the screen says. The script is written to say which step failed
+and what to do about it, rather than dying silently — so whatever it prints is
+the useful thing to send.
+
+Two you may hit:
+
+  "Not enough disk to build"
+        The root volume is too small. EC2 -> Instances -> your instance ->
+        Storage tab -> click the Volume ID -> Actions -> Modify volume ->
+        20 GiB -> Modify. Then run the same one-line command again; it
+        grows the filesystem for you.
+
+  "That download did not work"
+        Step 2 did not land. Open the raw.githubusercontent address from
+        step 2.4 in your browser and see what it says.
+
+================================================================================
