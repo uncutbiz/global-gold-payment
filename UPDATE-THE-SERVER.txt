@@ -1,0 +1,95 @@
+================================================================================
+  PUTTING THE NEW MERCHANT DASHBOARD ON YOUR SERVER
+================================================================================
+
+This is an UPDATE, not a fresh install. The server already has the app; it
+just needs the new code. Two steps, about three minutes.
+
+--------------------------------------------------------------------------------
+STEP 1 — REPLACE THE TARBALL IN GITHUB
+--------------------------------------------------------------------------------
+
+  1. Open  https://github.com/uncutbiz/global-gold-payment
+
+  2. Add file -> Upload files
+
+  3. Drag in   globalgold-source.tar.gz   from this folder.
+
+     Same file name as before, on purpose: GitHub replaces the old one and
+     the address below keeps working. Do not rename it to _2 or _v3 — a
+     repository full of half-remembered version suffixes is how the wrong
+     build gets deployed at midnight.
+
+  4. Commit changes.
+
+  5. If there are older copies in there (globalgold-source_2.tar.gz and
+     the like), delete them now. They only exist to be picked by mistake.
+
+--------------------------------------------------------------------------------
+STEP 2 — ONE LINE ON THE SERVER
+--------------------------------------------------------------------------------
+
+Log in with PuTTY and run:
+
+  sudo globalgold-update https://raw.githubusercontent.com/uncutbiz/global-gold-payment/main/globalgold-source.tar.gz
+
+Passing the address once re-points the server at the plain name, so from then
+on the update is just:
+
+  sudo globalgold-update
+
+It downloads, rebuilds, restarts and runs the database migration itself. When
+it finishes, check it:
+
+  globalgold-check
+
+--------------------------------------------------------------------------------
+THEN LOOK AT IT
+--------------------------------------------------------------------------------
+
+Open the dashboard in your browser and sign in with uncutbiz@gmail.com.
+
+  - HARD-REFRESH the page the first time: Ctrl+Shift+R on Windows.
+    Otherwise the browser serves you the old dashboard out of its cache and
+    it looks like nothing happened.
+
+What is new:
+
+  - A left sidebar instead of the row of tabs across the top: Home,
+    Payments, Invoices, Customers, Subscriptions, Payment links, Disputes,
+    Reports, Settings.
+  - Home now opens on five figures — available balance, pending settlement,
+    taken today, awaiting payment, waiting to be captured — then a seven-day
+    chart of successful against failed card attempts, then your balance,
+    payouts, recent transactions and the webhook event stream.
+  - Payments and Payment links are their own sections rather than being
+    buried on the home screen.
+
+The chart counts AUTHORIZATION ATTEMPTS, not money. A card declined twice and
+then approved is two failures and one success — which is the number you want
+when you are trying to work out why a day was quiet. Money stays in Reports,
+where it is kept separate per currency and never added across them.
+
+--------------------------------------------------------------------------------
+IF IT DOES NOT TAKE
+--------------------------------------------------------------------------------
+
+  globalgold-doctor
+
+and send me what it prints.
+
+--------------------------------------------------------------------------------
+STILL OUTSTANDING BEFORE REAL MONEY
+--------------------------------------------------------------------------------
+
+None of this is blocked on code:
+
+  - A domain, and an Elastic IP. 3.15.213.9 is temporary — it changes if the
+    instance ever stops, and every webhook and checkout link breaks with it.
+  - A Square developer application, so real cards route somewhere.
+  - A2P 10DLC registration, or the password-reset texts will be filtered.
+  - A sponsor bank / PCI / licensing path.
+
+And one piece of housekeeping: there is still no backup. Run
+  sudo globalgold-backup
+================================================================================
